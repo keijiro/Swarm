@@ -1,0 +1,63 @@
+﻿// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// https://github.com/keijiro/Swarm
+
+#pragma kernel CrawlerInit
+#pragma kernel CrawlerUpdate
+
+#include "UnityCG.cginc"
+#include "SimplexNoise3D.cginc"
+
+RWStructuredBuffer<float4> PositionBuffer;
+Texture3D<float4> DFVolume;
+SamplerState samplerDFVolume;
+
+CBUFFER_START(Params)
+    uint ArraySize;
+    uint InstanceCount;
+    float Time;
+CBUFFER_END
+
+float UVRandom(float u, float v)
+{
+    float f = dot(float2(12.9898, 78.233), float2(u, v));
+    return frac(43758.5453 * sin(f));
+}
+
+float4 SampleVolume(float3 p)
+{
+    return DFVolume.SampleLevel(samplerDFVolume, p * 0.5 + 0.5, 0);
+}
+
+[numthreads(64, 1, 1)]
+void CrawlerInit(uint id : SV_DispatchThreadID)
+{
+    float x = UVRandom(id * 0.01334, 0.3728);
+    float y = UVRandom(0.8372, id * 0.01197);
+    float z = UVRandom(4.438, id * 0.01938 - 4.378);
+    float4 p = float4(x, y, z, 0) * 0.8 - 0.4;
+
+    for (uint i = 0; i < ArraySize; i++)
+        PositionBuffer[id + i * InstanceCount] = p;
+}
+
+[numthreads(64, 1, 1)]
+void CrawlerUpdate(uint id : SV_DispatchThreadID)
+{
+    uint offs = id;
+    for (uint i = 0; i < ArraySize - 1; i++)
+    {
+        PositionBuffer[offs] = PositionBuffer[offs + InstanceCount];
+        offs += InstanceCount;
+    }
+
+    float3 p = PositionBuffer[offs].xyz;
+    float4 df = SampleVolume(p) * 6;
+
+    float4 sn1 = snoise(10.33 + p * 2 + Time * 0.1);
+    float4 sn2 = snoise(32.38 - p * 2 + Time * 0.1);
+
+    sn1.xyz = -sn1.xyz * df.w + df.xyz * sn1.w;
+    p += cross(sn1.xyz, sn2.xyz) * 0.005;
+
+    PositionBuffer[offs].xyz = p;
+}
