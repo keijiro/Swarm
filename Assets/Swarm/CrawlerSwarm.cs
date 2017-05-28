@@ -30,6 +30,7 @@ namespace Swarm
         ComputeBuffer _drawArgsBuffer;
         ComputeBuffer _positionBuffer;
         MaterialPropertyBlock _props;
+        int _frameCount;
 
         #endregion
 
@@ -38,6 +39,7 @@ namespace Swarm
         const int kThreadCount = 64;
         int ThreadGroupCount { get { return _instanceCount / kThreadCount; } }
         int InstanceCount { get { return kThreadCount * ThreadGroupCount; } }
+        int HistoryLength { get { return _template.segments + 1; } }
 
         #endregion
 
@@ -56,15 +58,24 @@ namespace Swarm
             });
 
             // Initialize the position buffer.
-            _positionBuffer = new ComputeBuffer(
-                (_template.segments + 1) * InstanceCount, 16
-            );
+            _positionBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
             var kernel = _compute.FindKernel("CrawlerInit");
-            _compute.SetInt("ArraySize", _template.segments + 1);
             _compute.SetInt("InstanceCount", InstanceCount);
+            _compute.SetInt("HistoryLength", HistoryLength);
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
+
+            // Initialize the update kernel.
+            kernel = _compute.FindKernel("CrawlerUpdate");
+            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
+
+            // Initialize the mateiral.
+            _material.SetInt("_InstanceCount", InstanceCount);
+            _material.SetInt("_HistoryLength", HistoryLength);
+            _material.SetBuffer("_PositionBuffer", _positionBuffer);
 
             // This property block is used only for avoiding an instancing bug.
             _props = new MaterialPropertyBlock();
@@ -79,21 +90,27 @@ namespace Swarm
 
         void Update()
         {
+            // Index offset on the position buffer.
+            var offset0 = InstanceCount * (_frameCount % HistoryLength);
+            var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
+
             // Update the position buffer.
             var kernel = _compute.FindKernel("CrawlerUpdate");
+            _compute.SetInt("IndexOffset0", offset0);
+            _compute.SetInt("IndexOffset1", offset1);
             _compute.SetFloat("Time", Time.time);
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
+            _frameCount++;
+
             // Draw the meshes with instancing.
-            _material.SetInt("_InstanceCount", InstanceCount);
-            _material.SetInt("_ArraySize", _template.segments + 1);
-            _material.SetBuffer("_PositionBuffer", _positionBuffer);
+            _material.SetInt("_IndexOffset", _frameCount % HistoryLength);
             _material.SetVector("_GradientA", _gradient.coeffsA);
             _material.SetVector("_GradientB", _gradient.coeffsB);
             _material.SetVector("_GradientC", _gradient.coeffsC2);
             _material.SetVector("_GradientD", _gradient.coeffsD2);
+            _material.SetMatrix("_LocalToWorld", transform.localToWorldMatrix);
+            _material.SetMatrix("_WorldToLocal", transform.worldToLocalMatrix);
 
             Graphics.DrawMeshInstancedIndirect(
                 _template.mesh, 0, _material,
