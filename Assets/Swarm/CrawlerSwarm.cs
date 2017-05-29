@@ -29,6 +29,8 @@ namespace Swarm
 
         ComputeBuffer _drawArgsBuffer;
         ComputeBuffer _positionBuffer;
+        ComputeBuffer _tangentBuffer;
+        ComputeBuffer _normalBuffer;
         MaterialPropertyBlock _props;
         int _frameCount;
 
@@ -57,13 +59,18 @@ namespace Swarm
                 (uint)InstanceCount, 0, 0, 0
             });
 
-            // Initialize the position buffer.
+            // Allocate compute buffers.
             _positionBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
+            _tangentBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
+            _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
+            // Initialize the position buffer.
             var kernel = _compute.FindKernel("CrawlerInit");
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
+            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
@@ -72,10 +79,18 @@ namespace Swarm
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
 
+            // Initialize the reconstruction kernel.
+            kernel = _compute.FindKernel("CrawlerReconstruct");
+            _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
+            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
+            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
+
             // Initialize the mateiral.
             _material.SetInt("_InstanceCount", InstanceCount);
             _material.SetInt("_HistoryLength", HistoryLength);
             _material.SetBuffer("_PositionBuffer", _positionBuffer);
+            _material.SetBuffer("_TangentBuffer", _tangentBuffer);
+            _material.SetBuffer("_NormalBuffer", _normalBuffer);
 
             // This property block is used only for avoiding an instancing bug.
             _props = new MaterialPropertyBlock();
@@ -86,25 +101,33 @@ namespace Swarm
         {
             _drawArgsBuffer.Release();
             _positionBuffer.Release();
+            _tangentBuffer.Release();
+            _normalBuffer.Release();
         }
 
         void Update()
         {
             // Index offset on the position buffer.
-            var offset0 = InstanceCount * (_frameCount % HistoryLength);
+            var offset0 = InstanceCount * ( _frameCount      % HistoryLength);
             var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
+            var offset2 = InstanceCount * ((_frameCount + 2) % HistoryLength);
+
+            // Parameters for the compute kernels.
+            _compute.SetInt("IndexOffset0", offset0);
+            _compute.SetInt("IndexOffset1", offset1);
+            _compute.SetInt("IndexOffset2", offset2);
+            _compute.SetFloat("Time", Time.time);
 
             // Update the position buffer.
             var kernel = _compute.FindKernel("CrawlerUpdate");
-            _compute.SetInt("IndexOffset0", offset0);
-            _compute.SetInt("IndexOffset1", offset1);
-            _compute.SetFloat("Time", Time.time);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-            _frameCount++;
+            // Reconstruct tangent/normal vectors.
+            kernel = _compute.FindKernel("CrawlerReconstruct");
+            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
             // Draw the meshes with instancing.
-            _material.SetInt("_IndexOffset", _frameCount % HistoryLength);
+            _material.SetInt("_IndexOffset", _frameCount + 3);
             _material.SetVector("_GradientA", _gradient.coeffsA);
             _material.SetVector("_GradientB", _gradient.coeffsB);
             _material.SetVector("_GradientC", _gradient.coeffsC2);
@@ -117,6 +140,8 @@ namespace Swarm
                 new Bounds(Vector3.zero, Vector3.one * 10000),
                 _drawArgsBuffer, 0, _props
             );
+
+            _frameCount++;
         }
 
         #endregion

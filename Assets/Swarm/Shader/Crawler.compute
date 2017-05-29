@@ -3,11 +3,17 @@
 
 #pragma kernel CrawlerInit
 #pragma kernel CrawlerUpdate
+#pragma kernel CrawlerReconstruct
 
 #include "UnityCG.cginc"
 #include "SimplexNoise3D.cginc"
 
 RWStructuredBuffer<float4> PositionBuffer;
+StructuredBuffer<float4> PositionBufferRO;
+
+RWStructuredBuffer<float4> TangentBuffer;
+RWStructuredBuffer<float4> NormalBuffer;
+
 Texture3D<float4> DFVolume;
 SamplerState samplerDFVolume;
 
@@ -16,6 +22,7 @@ CBUFFER_START(Params)
     uint HistoryLength;
     uint IndexOffset0;
     uint IndexOffset1;
+    uint IndexOffset2;
     float Time;
 CBUFFER_END
 
@@ -56,16 +63,21 @@ void CrawlerInit(uint id : SV_DispatchThreadID)
         d = min(d, d2);
     }
 
-    // Fill the position buffer.
+    // Fill the position/tangent/normal buffer.
     for (uint i = 0; i < HistoryLength; i++)
-        PositionBuffer[id + i * InstanceCount] = p;
+    {
+        uint offs = id + i * InstanceCount;
+        PositionBuffer[offs] = p;
+        TangentBuffer[offs] = float4(0, 0, 1, 0);
+        NormalBuffer[offs] = float4(1, 0, 0, 0);
+    }
 }
 
 [numthreads(64, 1, 1)]
 void CrawlerUpdate(uint id : SV_DispatchThreadID)
 {
     // Retrieve the previous position.
-    float3 p = PositionBuffer[IndexOffset0 + id].xyz;
+    float3 p = PositionBuffer[IndexOffset1 + id].xyz;
 
     // Distance field (gradient.x, y, z, distance).
     float4 df = SampleVolume(p) * 6;
@@ -81,5 +93,33 @@ void CrawlerUpdate(uint id : SV_DispatchThreadID)
     p += cross(sn1.xyz, sn2.xyz) * 0.005;
 
     // Update the buffer.
-    PositionBuffer[IndexOffset1 + id].xyz = p;
+    PositionBuffer[IndexOffset2 + id].xyz = p;
+}
+
+[numthreads(64, 1, 1)]
+void CrawlerReconstruct(uint id : SV_DispatchThreadID)
+{
+    // Retrieve the history.
+    float3 p0 = PositionBufferRO[IndexOffset0 + id].xyz; // Two frames ago
+    float3 p1 = PositionBufferRO[IndexOffset1 + id].xyz; // Previous frame
+    float3 p2 = PositionBufferRO[IndexOffset2 + id].xyz; // Current frame
+
+    float3 t0 = TangentBuffer[IndexOffset0 + id].xyz; // Two frames ago
+    float3 n0 = NormalBuffer[IndexOffset0 + id].xyz;
+    float3 b0 = cross(t0, n0);
+
+    // Tangent vectors.
+    float3 t1 = normalize(p2 - p0);
+    float3 t2 = normalize(p2 - p1);
+
+    // Compute normal vectors based on b0.
+    float3 n1 = normalize(cross(b0, t1));
+    float3 b1 = cross(t1, n1);
+    float3 n2 = normalize(cross(b1, t2));
+
+    // Store the results.
+    TangentBuffer[IndexOffset1 + id] = float4(t1, 0);
+    TangentBuffer[IndexOffset2 + id] = float4(t2, 0);
+    NormalBuffer[IndexOffset1 + id] = float4(n1, 0);
+    NormalBuffer[IndexOffset2 + id] = float4(n2, 0);
 }

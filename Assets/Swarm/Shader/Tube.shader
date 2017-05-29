@@ -33,6 +33,8 @@
         #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 
         StructuredBuffer<float4> _PositionBuffer;
+        StructuredBuffer<float4> _TangentBuffer;
+        StructuredBuffer<float4> _NormalBuffer;
         uint _InstanceCount;
         uint _HistoryLength;
         uint _IndexOffset;
@@ -53,34 +55,28 @@
 
             const float radius = 0.01;
 
-            float phi = v.vertex.x;
-            float seg = v.vertex.z;
+            float phi = v.vertex.x; // Angle in slice
+            float seg = v.vertex.z; // Segment index
+            uint iseg = (uint)seg;
 
-            uint id = unity_InstanceID;
-            uint idx = clamp(seg, 1, _HistoryLength - 2);
-            uint idx0 = (idx - 1 + _IndexOffset + _HistoryLength) % _HistoryLength;
-            uint idx1 = (idx     + _IndexOffset) % _HistoryLength;
-            uint idx2 = (idx + 1 + _IndexOffset) % _HistoryLength;
-            uint idx3 = (idx + 2 + _IndexOffset) % _HistoryLength;
-
-            float3 p0 = _PositionBuffer[id + idx0 * _InstanceCount].xyz;
-            float3 p1 = _PositionBuffer[id + idx1 * _InstanceCount].xyz;
-            float3 p2 = _PositionBuffer[id + idx2 * _InstanceCount].xyz;
-            float3 p3 = _PositionBuffer[id + idx3 * _InstanceCount].xyz;
-
-            float3 vt0 = normalize(p2 - p0);
-            float3 vt1 = normalize(p3 - p1);
-            float3 vn = normalize(vt1 - vt0);
-            float3 vb = cross(vt1, vn);
-            vn = cross(vb, vt1);
-
-            float2 xy = float2(cos(phi), sin(phi));
-
+            // Parameter along the curve (used for coloring).
             float param = seg / _HistoryLength;
             param += (float)unity_InstanceID / _InstanceCount; 
 
-            v.vertex.xyz = p1 + (vn * xy.x + vb * xy.y) * radius;
-            v.normal.xyz = vn * xy.x + vb * xy.y;
+            // Index of the current slice in the buffers.
+            uint idx = unity_InstanceID;
+            idx += _InstanceCount * ((iseg + _IndexOffset) % _HistoryLength);
+
+            float3 p = _PositionBuffer[idx].xyz; // Position
+            float3 t = _TangentBuffer[idx].xyz;  // Curve-TNB: Tangent 
+            float3 n = _NormalBuffer[idx].xyz;   // Curve-TNB: Normal
+            float3 b = cross(t, n);              // Curve-TNB: Binormal
+
+            float3 normal = n * cos(phi) + b * sin(phi); // Surface normal
+
+            // Feedback the results.
+            v.vertex = float4(p + normal * radius, 1);
+            v.normal = normal;
             v.color = param;
 
             #endif
