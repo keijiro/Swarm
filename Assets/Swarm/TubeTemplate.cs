@@ -44,35 +44,77 @@ namespace Swarm
             // Vertex array
             var vertices = new List<Vector3>();
 
+            // Head tip
+            vertices.Add(new Vector3(0, -1, 0));
+
+            // Tube body vertices
             for (var i = 0; i < _segments + 1; i++)
             {
-                for (var j = 0; j < _divisions + 1; j++)
+                for (var j = 0; j < _divisions; j++)
                 {
                     var phi = Mathf.PI * 2 * j / _divisions;
                     vertices.Add(new Vector3(phi, 0, i));
                 }
             }
 
+            // Tail tip
+            vertices.Add(new Vector3(0, 1, _segments)); // tail
+
             // Index array
             var indices = new List<int>();
-            var refi = 0;
+
+            // Head cap
+            for (var i = 0; i < _divisions - 1; i++)
+            {
+                indices.Add(0);
+                indices.Add(i + 2);
+                indices.Add(i + 1);
+            }
+
+            indices.Add(0);
+            indices.Add(1);
+            indices.Add(_divisions);
+
+            // Tube body indices
+            var refi = 1;
 
             for (var i = 0; i < _segments; i++)
             {
-                for (var j = 0; j < _divisions; j++)
+                for (var j = 0; j < _divisions - 1; j++)
                 {
                     indices.Add(refi);
                     indices.Add(refi + 1);
-                    indices.Add(refi + 1 + _divisions);
+                    indices.Add(refi + _divisions);
 
                     indices.Add(refi + 1);
-                    indices.Add(refi + 2 + _divisions);
                     indices.Add(refi + 1 + _divisions);
+                    indices.Add(refi + _divisions);
 
                     refi++;
                 }
+
+                indices.Add(refi);
+                indices.Add(refi + 1 - _divisions);
+                indices.Add(refi + _divisions);
+
+                indices.Add(refi + 1 - _divisions);
+                indices.Add(refi + 1);
+                indices.Add(refi + _divisions);
+
                 refi++;
             }
+
+            // Tail cap
+            for (var i = 0; i < _divisions - 1; i++)
+            {
+                indices.Add(refi + i);
+                indices.Add(refi + i + 1);
+                indices.Add(refi + _divisions);
+            }
+
+            indices.Add(refi + _divisions - 1);
+            indices.Add(refi);
+            indices.Add(refi + _divisions);
 
             // Mesh rebuilding
             _mesh.Clear();

@@ -354,7 +354,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _instanceCount: 4000
-  _template: {fileID: 11400000, guid: 14bd2a077b97cb042ac835ef28e4add9, type: 2}
+  _template: {fileID: 11400000, guid: 407b7afb8fbe855408cc9bf4dd39058a, type: 2}
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
   _volume: {fileID: 11400000, guid: 33827603f26d861438dab734dfca23e1, type: 2}

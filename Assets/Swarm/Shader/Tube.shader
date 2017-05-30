@@ -56,6 +56,7 @@
             const float radius = 0.01;
 
             float phi = v.vertex.x; // Angle in slice
+            float cap = v.vertex.y; // -1:head, +1:tail
             float seg = v.vertex.z; // Segment index
             uint iseg = (uint)seg;
 
@@ -75,8 +76,8 @@
             float3 normal = n * cos(phi) + b * sin(phi); // Surface normal
 
             // Feedback the results.
-            v.vertex = float4(p + normal * radius, 1);
-            v.normal = normal;
+            v.vertex = float4(p + normal * radius * (1 - abs(cap)), 1);
+            v.normal = normal * (1 - abs(cap)) + n * cap;
             v.color = param;
 
             #endif
