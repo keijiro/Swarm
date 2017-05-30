@@ -7,15 +7,84 @@ using DFVolume;
 
 namespace Swarm
 {
+    // Distance-field constrained swarm
     public sealed class CrawlerSwarm : MonoBehaviour
     {
-        #region Editable properties
+        #region Basic settings
 
         [SerializeField] int _instanceCount = 1000;
+
+        public int instanceCount {
+            get { return _instanceCount; }
+        }
+
+        #endregion
+
+        #region Renderer settings
+
         [SerializeField] TubeTemplate _template;
+
+        public TubeTemplate template {
+            get { return _template; }
+        }
+
+        [SerializeField, Range(0, 0.1f)] float _radius = 0.01f;
+
+        public float radius {
+            get { return _radius; }
+            set { _radius = value; }
+        }
+
         [SerializeField] Material _material;
+
+        public Material material {
+            get { return _material; }
+        }
+
         [SerializeField] CosineGradient _gradient;
+
+        public CosineGradient gradient {
+            get { return _gradient; }
+            set { _gradient = value; }
+        }
+
+        #endregion
+
+        #region Dynamics settings
+
+        [SerializeField] float _speed = 0.5f;
+
+        public float speed {
+            get { return _speed; }
+            set { _speed = value; }
+        }
+
         [SerializeField] VolumeData _volume;
+
+        public VolumeData volume {
+            get { return _volume; }
+        }
+
+        [SerializeField] float _constraint = 6;
+
+        public float constraint {
+            get { return _constraint; }
+            set { _constraint = value; }
+        }
+
+        [SerializeField] float _noiseFrequency = 2;
+
+        public float noiseFrequency {
+            get { return _noiseFrequency; }
+            set { _noiseFrequency = value; }
+        }
+
+        [SerializeField] float _noiseMotion = 0.1f;
+
+        public float noiseMotion {
+            get { return _noiseMotion; }
+            set { _noiseMotion = value; }
+        }
 
         #endregion
 
@@ -107,6 +176,9 @@ namespace Swarm
 
         void Update()
         {
+            var time = Time.time;
+            var delta = Mathf.Min(Time.deltaTime, 1.0f / 15);
+
             // Index offset on the position buffer.
             var offset0 = InstanceCount * ( _frameCount      % HistoryLength);
             var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
@@ -116,7 +188,11 @@ namespace Swarm
             _compute.SetInt("IndexOffset0", offset0);
             _compute.SetInt("IndexOffset1", offset1);
             _compute.SetInt("IndexOffset2", offset2);
-            _compute.SetFloat("Time", Time.time);
+            _compute.SetFloat("Time", time);
+            _compute.SetFloat("Speed", _speed * delta);
+            _compute.SetFloat("Constraint", _constraint);
+            _compute.SetFloat("NoiseFrequency", _noiseFrequency);
+            _compute.SetFloat("NoiseOffset", time * _noiseMotion);
 
             // Update the position buffer.
             var kernel = _compute.FindKernel("CrawlerUpdate");
@@ -128,6 +204,7 @@ namespace Swarm
 
             // Draw the meshes with instancing.
             _material.SetInt("_IndexOffset", _frameCount + 3);
+            _material.SetFloat("_Radius", _radius);
             _material.SetVector("_GradientA", _gradient.coeffsA);
             _material.SetVector("_GradientB", _gradient.coeffsB);
             _material.SetVector("_GradientC", _gradient.coeffsC2);

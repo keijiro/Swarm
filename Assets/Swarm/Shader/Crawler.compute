@@ -24,6 +24,10 @@ CBUFFER_START(Params)
     uint IndexOffset1;
     uint IndexOffset2;
     float Time;
+    float Speed;
+    float Constraint;
+    float NoiseFrequency;
+    float NoiseOffset;
 CBUFFER_END
 
 float UVRandom(float u, float v)
@@ -44,7 +48,7 @@ void CrawlerInit(uint id : SV_DispatchThreadID)
     float x = UVRandom(id * 0.01334, 0.3728);
     float y = UVRandom(0.8372, id * 0.01197);
     float z = UVRandom(4.438, id * 0.01938 - 4.378);
-    float4 p = float4(x, y, z, 0) * 0.8 - 0.4;
+    float4 p = float4(x, y, z, 0) * 0.5 - 0.25;
     float d = SampleVolume(p);
 
     // Swizzle and compre, choose one with closer distance.
@@ -80,17 +84,17 @@ void CrawlerUpdate(uint id : SV_DispatchThreadID)
     float3 p = PositionBuffer[IndexOffset1 + id].xyz;
 
     // Distance field (gradient.x, y, z, distance).
-    float4 df = SampleVolume(p) * 6;
+    float4 df = SampleVolume(p) * Constraint;
 
     // Two independent noise fields (not completely independent though).
-    float4 sn1 = snoise(10.33 + p * 2 + Time * 0.1);
-    float4 sn2 = snoise(32.38 - p * 2 + Time * 0.1);
+    float4 sn1 = snoise(10.33 + p.xyz * NoiseFrequency + NoiseOffset);
+    float4 sn2 = snoise(32.38 - p.yzx * NoiseFrequency + NoiseOffset);
 
     // Apply the boundary condition to the first noise field.
     sn1.xyz = -sn1.xyz * df.w + df.xyz * sn1.w;
 
     // Apply the divergence free noise field to the position.
-    p += cross(sn1.xyz, sn2.xyz) * 0.005;
+    p += cross(sn1.xyz, sn2.xyz) * Speed;
 
     // Update the buffer.
     PositionBuffer[IndexOffset2 + id].xyz = p;

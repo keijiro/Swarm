@@ -22,6 +22,8 @@
         half _Smoothness;
         half _Metallic;
 
+        float _Radius;
+
         half3 _GradientA;
         half3 _GradientB;
         half3 _GradientC;
@@ -53,8 +55,6 @@
 
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 
-            const float radius = 0.01;
-
             float phi = v.vertex.x; // Angle in slice
             float cap = v.vertex.y; // -1:head, +1:tail
             float seg = v.vertex.z; // Segment index
@@ -76,7 +76,7 @@
             float3 normal = n * cos(phi) + b * sin(phi); // Surface normal
 
             // Feedback the results.
-            v.vertex = float4(p + normal * radius * (1 - abs(cap)), 1);
+            v.vertex = float4(p + normal * _Radius * (1 - abs(cap)), 1);
             v.normal = normal * (1 - abs(cap)) + n * cap;
             v.color = param;
 

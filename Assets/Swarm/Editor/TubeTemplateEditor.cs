@@ -10,7 +10,7 @@ namespace Swarm
 {
     // Custom inspector for TubeTemplate.
     [CustomEditor(typeof(TubeTemplate)), CanEditMultipleObjects]
-    public class TubeTemplateEditor : Editor
+    public sealed class TubeTemplateEditor : Editor
     {
         #region Custom inspector
 

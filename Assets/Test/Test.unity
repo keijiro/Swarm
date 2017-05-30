@@ -355,9 +355,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _instanceCount: 4000
   _template: {fileID: 11400000, guid: 407b7afb8fbe855408cc9bf4dd39058a, type: 2}
+  _radius: 0.01
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
+  _speed: 0.5
   _volume: {fileID: 11400000, guid: 33827603f26d861438dab734dfca23e1, type: 2}
+  _constraint: 6
+  _noiseFrequency: 2
+  _noiseMotion: 0.1
   _compute: {fileID: 7200000, guid: e579db230e141ad4baa8636ac84ed1ef, type: 3}
 --- !u!4 &1452801457
 Transform:
