@@ -1,4 +1,4 @@
-// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// Swarm - Special renderer that draws a swarm of swirling/crawling lines.
 // https://github.com/keijiro/Swarm
 
 using UnityEngine;
@@ -6,9 +6,9 @@ using UnityEditor;
 
 namespace Swarm
 {
-    // Custom inspector for CrawlerSwarm
-    [CustomEditor(typeof(CrawlerSwarm)), CanEditMultipleObjects]
-    public class CrawlerSwarmEditor : Editor
+    // Custom inspector for CrawlingSwarm
+    [CustomEditor(typeof(CrawlingSwarm)), CanEditMultipleObjects]
+    public class CrawlingSwarmEditor : Editor
     {
         SerializedProperty _instanceCount;
 

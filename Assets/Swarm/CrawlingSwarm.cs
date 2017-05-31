@@ -1,4 +1,4 @@
-﻿// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// Swarm - Special renderer that draws a swarm of swirling/crawling lines.
 // https://github.com/keijiro/Swarm
 
 using UnityEngine;
@@ -8,7 +8,7 @@ using DFVolume;
 namespace Swarm
 {
     // Distance-field constrained swarm
-    public sealed class CrawlerSwarm : MonoBehaviour
+    public sealed class CrawlingSwarm : MonoBehaviour
     {
         #region Basic settings
 
@@ -139,7 +139,7 @@ namespace Swarm
             _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
             // Initialize the position buffer.
-            var kernel = _compute.FindKernel("CrawlerInit");
+            var kernel = _compute.FindKernel("CrawlingInit");
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
@@ -149,12 +149,12 @@ namespace Swarm
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
             // Initialize the update kernel.
-            kernel = _compute.FindKernel("CrawlerUpdate");
+            kernel = _compute.FindKernel("CrawlingUpdate");
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
 
             // Initialize the reconstruction kernel.
-            kernel = _compute.FindKernel("CrawlerReconstruct");
+            kernel = _compute.FindKernel("CrawlingReconstruct");
             _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
@@ -200,11 +200,11 @@ namespace Swarm
                 _compute.SetFloat("NoiseOffset", Time.time * _noiseMotion);
 
                 // Update the position buffer.
-                var kernel = _compute.FindKernel("CrawlerUpdate");
+                var kernel = _compute.FindKernel("CrawlingUpdate");
                 _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
                 // Reconstruct tangent/normal vectors.
-                kernel = _compute.FindKernel("CrawlerReconstruct");
+                kernel = _compute.FindKernel("CrawlingReconstruct");
                 _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
             }
 

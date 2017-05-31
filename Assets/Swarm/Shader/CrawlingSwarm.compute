@@ -1,9 +1,9 @@
-﻿// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// Swarm - Special renderer that draws a swarm of swirling/crawling lines.
 // https://github.com/keijiro/Swarm
 
-#pragma kernel CrawlerInit
-#pragma kernel CrawlerUpdate
-#pragma kernel CrawlerReconstruct
+#pragma kernel CrawlingInit
+#pragma kernel CrawlingUpdate
+#pragma kernel CrawlingReconstruct
 
 #include "UnityCG.cginc"
 #include "SimplexNoise3D.cginc"
@@ -51,7 +51,7 @@ float4 SampleVolume(float3 p)
 }
 
 [numthreads(64, 1, 1)]
-void CrawlerInit(uint id : SV_DispatchThreadID)
+void CrawlingInit(uint id : SV_DispatchThreadID)
 {
     // Pick two random points and use closer one.
     float3 p1 = RandomPoint(id + 0.0) / 3;
@@ -71,7 +71,7 @@ void CrawlerInit(uint id : SV_DispatchThreadID)
 }
 
 [numthreads(64, 1, 1)]
-void CrawlerUpdate(uint id : SV_DispatchThreadID)
+void CrawlingUpdate(uint id : SV_DispatchThreadID)
 {
     // Retrieve the previous position.
     float3 p = PositionBuffer[IndexOffset1 + id].xyz;
@@ -95,7 +95,7 @@ void CrawlerUpdate(uint id : SV_DispatchThreadID)
 }
 
 [numthreads(64, 1, 1)]
-void CrawlerReconstruct(uint id : SV_DispatchThreadID)
+void CrawlingReconstruct(uint id : SV_DispatchThreadID)
 {
     // Retrieve the history.
     float3 p0 = PositionBufferRO[IndexOffset0 + id].xyz; // Two frames ago

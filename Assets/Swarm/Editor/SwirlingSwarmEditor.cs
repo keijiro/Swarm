@@ -1,4 +1,4 @@
-// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// Swarm - Special renderer that draws a swarm of swirling/crawling lines.
 // https://github.com/keijiro/Swarm
 
 using UnityEngine;
