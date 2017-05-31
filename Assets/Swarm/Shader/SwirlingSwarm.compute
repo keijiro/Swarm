@@ -1,0 +1,101 @@
+﻿// Swarm - Special renderer that draws a swarm of wobbling/crawling tubes.
+// https://github.com/keijiro/Swarm
+
+#pragma kernel SwirlingUpdate
+#pragma kernel SwirlingReconstruct
+
+#include "UnityCG.cginc"
+#include "SimplexNoise3D.cginc"
+
+RWStructuredBuffer<float4> PositionBuffer;
+RWStructuredBuffer<float4> TangentBuffer;
+RWStructuredBuffer<float4> NormalBuffer;
+
+StructuredBuffer<float4> PositionBufferRO;
+
+CBUFFER_START(Params)
+    uint InstanceCount;
+    uint HistoryLength;
+    float Spread;
+    float StepWidth;
+    float NoiseFrequency;
+    float3 NoiseOffset;
+CBUFFER_END
+
+float Random(float u, float v)
+{
+    float f = dot(float2(12.9898, 78.233), float2(u, v));
+    return frac(43758.5453 * sin(f));
+}
+
+// Nearly uniformly distributed random vector in the unit sphere.
+float3 RandomPoint(float id)
+{
+    float u = Random(id * 0.01334, 0.3728) * UNITY_PI * 2;
+    float z = Random(0.8372, id * 0.01197) * 2 - 1;
+    float l = Random(4.438, id * 0.01938 - 4.378);
+    return float3(float2(cos(u), sin(u)) * sqrt(1 - z * z), z) * sqrt(l);
+}
+
+[numthreads(64, 1, 1)]
+void SwirlingUpdate(uint id : SV_DispatchThreadID)
+{
+    // Determine the first point.
+    float3 p = RandomPoint(id) * Spread;
+    PositionBuffer[id] = float4(p, 0);
+
+    for (uint i = 1; i < HistoryLength; i++)
+    {
+        // Divergence-free noise field.
+        float4 sn1 = snoise(98.4898 + p * NoiseFrequency + NoiseOffset);
+        float4 sn2 = snoise( 1.2278 - p * NoiseFrequency + NoiseOffset);
+
+        // Move and store the point.
+        p += cross(sn1.xyz, sn2.xyz) * StepWidth;
+        PositionBuffer[id + i * InstanceCount] = float4(p, 0);
+    }
+}
+
+[numthreads(64, 1, 1)]
+void SwirlingReconstruct(uint id : SV_DispatchThreadID)
+{
+    // Reconstruct the first point.
+    float3 p0 = PositionBufferRO[id].xyz;
+    float3 p1 = PositionBufferRO[id + InstanceCount].xyz;
+
+    float3 t0 = normalize(p1 - p0);
+    float3 b0 = cross(t0, normalize(p0));
+    float3 n0 = cross(b0, t0);
+
+    TangentBuffer[id] = float4(t0, 0);
+    NormalBuffer[id] = float4(n0, 0);
+
+    // Sequentially reconstruct the points excepting the last one.
+    for (uint i = 1; i < HistoryLength - 1; i++)
+    {
+        uint index = id + i * InstanceCount;
+
+        float3 p0 = PositionBufferRO[index - InstanceCount].xyz;
+        float3 p2 = PositionBufferRO[index + InstanceCount].xyz;
+
+        float3 t1 = normalize(p2 - p0);
+        float3 n1 = normalize(cross(b0, t1));
+
+        TangentBuffer[index] = float4(t1, 0);
+        NormalBuffer[index] = float4(n1, 0);
+
+        b0 = cross(t1, n1);
+    }
+
+    // Reconstruct the last point.
+    uint index = id + (HistoryLength - 1) * InstanceCount;
+
+    p0 = PositionBufferRO[index - InstanceCount].xyz;
+    p1 = PositionBufferRO[index].xyz;
+
+    float3 t1 = normalize(p1 - p0);
+    float3 n1 = normalize(cross(b0, t1));
+
+    TangentBuffer[index] = float4(t1, 0);
+    NormalBuffer[index] = float4(n1, 0);
+}

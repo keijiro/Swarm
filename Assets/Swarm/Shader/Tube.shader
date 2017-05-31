@@ -27,6 +27,8 @@
         half3 _GradientC;
         half3 _GradientD;
 
+        float _Radius;
+
         float4x4 _LocalToWorld;
         float4x4 _WorldToLocal;
 
@@ -38,9 +40,7 @@
 
         uint _InstanceCount;
         uint _HistoryLength;
-
         uint _IndexOffset;
-        float _Radius;
 
         #endif
 
@@ -86,10 +86,8 @@
 
         void setup()
         {
-            #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             unity_ObjectToWorld = _LocalToWorld;
             unity_WorldToObject = _WorldToLocal;
-            #endif
         }
 
         void surf (Input IN, inout SurfaceOutputStandard o)

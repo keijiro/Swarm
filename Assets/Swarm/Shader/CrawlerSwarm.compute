@@ -28,7 +28,6 @@ CBUFFER_START(Params)
     float NoiseFrequency;
     float NoiseSpread;
     float NoiseOffset;
-    float Time;
 CBUFFER_END
 
 float Random(float u, float v)
@@ -77,7 +76,7 @@ void CrawlerUpdate(uint id : SV_DispatchThreadID)
     // Retrieve the previous position.
     float3 p = PositionBuffer[IndexOffset1 + id].xyz;
 
-    // Sample the point in the distance field.
+    // Retrieve a sample from the distance field.
     float4 df = SampleVolume(p);
 
     // Two independent noise fields.

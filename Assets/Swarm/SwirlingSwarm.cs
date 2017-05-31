@@ -3,12 +3,10 @@
 
 using UnityEngine;
 using Klak.Chromatics;
-using DFVolume;
 
 namespace Swarm
 {
-    // Distance-field constrained swarm
-    public sealed class CrawlerSwarm : MonoBehaviour
+    public sealed class SwirlingSwarm : MonoBehaviour
     {
         #region Basic settings
 
@@ -52,17 +50,18 @@ namespace Swarm
 
         #region Dynamics settings
 
-        [SerializeField] float _speed = 0.75f;
+        [SerializeField] float _spread = 1;
 
-        public float speed {
-            get { return _speed; }
-            set { _speed = value; }
+        public float spread {
+            get { return _spread; }
+            set { _spread = value; }
         }
 
-        [SerializeField] VolumeData _volume;
+        [SerializeField] float _length = 10;
 
-        public VolumeData volume {
-            get { return _volume; }
+        public float length {
+            get { return _length; }
+            set { _length = value; }
         }
 
         [SerializeField] float _noiseFrequency = 4;
@@ -72,16 +71,9 @@ namespace Swarm
             set { _noiseFrequency = value; }
         }
 
-        [SerializeField] float _noiseSpread = 0.5f;
+        [SerializeField] Vector3 _noiseMotion = Vector3.up * 0.2f;
 
-        public float noiseSpread {
-            get { return _noiseSpread; }
-            set { _noiseSpread = value; }
-        }
-
-        [SerializeField] float _noiseMotion = 0.1f;
-
-        public float noiseMotion {
+        public Vector3 noiseMotion {
             get { return _noiseMotion; }
             set { _noiseMotion = value; }
         }
@@ -101,7 +93,7 @@ namespace Swarm
         ComputeBuffer _tangentBuffer;
         ComputeBuffer _normalBuffer;
         MaterialPropertyBlock _props;
-        int _frameCount;
+        Vector3 _noiseOffset;
 
         #endregion
 
@@ -138,23 +130,14 @@ namespace Swarm
             _tangentBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
             _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
-            // Initialize the position buffer.
-            var kernel = _compute.FindKernel("CrawlerInit");
+            // Initialize the update kernel.
+            var kernel = _compute.FindKernel("SwirlingUpdate");
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
-            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
-
-            // Initialize the update kernel.
-            kernel = _compute.FindKernel("CrawlerUpdate");
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
 
             // Initialize the reconstruction kernel.
-            kernel = _compute.FindKernel("CrawlerReconstruct");
+            kernel = _compute.FindKernel("SwirlingReconstruct");
             _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
@@ -181,35 +164,21 @@ namespace Swarm
 
         void Update()
         {
-            var delta = Mathf.Min(Time.deltaTime, 1.0f / 30);
+            _noiseOffset += _noiseMotion * Time.deltaTime;
 
-            if (delta > 0)
-            {
-                // Index offset on the position buffer.
-                var offset0 = InstanceCount * ( _frameCount      % HistoryLength);
-                var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
-                var offset2 = InstanceCount * ((_frameCount + 2) % HistoryLength);
+            // Update the position buffer.
+            var kernel = _compute.FindKernel("SwirlingUpdate");
+            _compute.SetFloat("Spread", _spread);
+            _compute.SetFloat("StepWidth", _length / _template.segments);
+            _compute.SetFloat("NoiseFrequency", _noiseFrequency);
+            _compute.SetVector("NoiseOffset", _noiseOffset);
+            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-                // Update the parameters for the compute kernels.
-                _compute.SetInt("IndexOffset0", offset0);
-                _compute.SetInt("IndexOffset1", offset1);
-                _compute.SetInt("IndexOffset2", offset2);
-                _compute.SetFloat("Speed", _speed * delta);
-                _compute.SetFloat("NoiseFrequency", _noiseFrequency);
-                _compute.SetFloat("NoiseSpread", _noiseSpread / InstanceCount);
-                _compute.SetFloat("NoiseOffset", Time.time * _noiseMotion);
-
-                // Update the position buffer.
-                var kernel = _compute.FindKernel("CrawlerUpdate");
-                _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
-
-                // Reconstruct tangent/normal vectors.
-                kernel = _compute.FindKernel("CrawlerReconstruct");
-                _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
-            }
+            // Reconstruct tangent/normal vectors.
+            kernel = _compute.FindKernel("SwirlingReconstruct");
+            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
             // Draw the meshes with instancing.
-            _material.SetInt("_IndexOffset", _frameCount + 3);
             _material.SetFloat("_Radius", _radius);
             _material.SetVector("_GradientA", _gradient.coeffsA);
             _material.SetVector("_GradientB", _gradient.coeffsB);
@@ -223,8 +192,6 @@ namespace Swarm
                 new Bounds(Vector3.zero, Vector3.one * 1.5f),
                 _drawArgsBuffer, 0, _props
             );
-
-            _frameCount++;
         }
 
         #endregion

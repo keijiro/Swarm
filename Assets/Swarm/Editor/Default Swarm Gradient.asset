@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54276434dda9c694e85abaf98cdd981d, type: 3}
-  m_Name: Default Gradient
+  m_Name: Default Swarm Gradient
   m_EditorClassIdentifier: 
   _redCoeffs: {x: 0.5, y: 0.5, z: 1, w: 0}
   _greenCoeffs: {x: 0.5, y: 0.5, z: 1, w: 0.333}
