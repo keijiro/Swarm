@@ -34,7 +34,7 @@ namespace DFVolume
             Gizmos.DrawWireCube(Vector3.zero, Vector3.one * _extent * 2);
         }
 
-        public Color[] GenerateBitmap2()
+        public Color[] GenerateBitmap()
         {
             // Generate a distance field.
             var df = new float[_resolution * _resolution * _resolution];

@@ -22,8 +22,6 @@
         half _Smoothness;
         half _Metallic;
 
-        float _Radius;
-
         half3 _GradientA;
         half3 _GradientB;
         half3 _GradientC;
@@ -37,9 +35,12 @@
         StructuredBuffer<float4> _PositionBuffer;
         StructuredBuffer<float4> _TangentBuffer;
         StructuredBuffer<float4> _NormalBuffer;
+
         uint _InstanceCount;
         uint _HistoryLength;
+
         uint _IndexOffset;
+        float _Radius;
 
         #endif
 

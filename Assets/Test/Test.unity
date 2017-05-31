@@ -353,15 +353,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b96d22c8c7818ec49969122b320a267a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _instanceCount: 4000
+  _instanceCount: 3000
   _template: {fileID: 11400000, guid: 407b7afb8fbe855408cc9bf4dd39058a, type: 2}
-  _radius: 0.01
+  _radius: 0.005
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
-  _speed: 0.5
+  _speed: 0.7
   _volume: {fileID: 11400000, guid: 33827603f26d861438dab734dfca23e1, type: 2}
-  _constraint: 6
-  _noiseFrequency: 2
+  _noiseFrequency: 4
+  _noiseSpread: 0.25
   _noiseMotion: 0.1
   _compute: {fileID: 7200000, guid: e579db230e141ad4baa8636ac84ed1ef, type: 3}
 --- !u!4 &1452801457
@@ -372,7 +372,7 @@ Transform:
   m_GameObject: {fileID: 1452801455}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2

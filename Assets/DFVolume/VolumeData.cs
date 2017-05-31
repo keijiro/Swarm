@@ -29,7 +29,7 @@ namespace DFVolume
             _texture.name = "Distance Field Texture";
             _texture.filterMode = FilterMode.Bilinear;
             _texture.wrapMode = TextureWrapMode.Clamp;
-            _texture.SetPixels(sampler.GenerateBitmap2());
+            _texture.SetPixels(sampler.GenerateBitmap());
             _texture.Apply();
         }
 

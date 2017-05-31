@@ -17,10 +17,10 @@ namespace Swarm
         SerializedProperty _material;
         SerializedProperty _gradient;
 
-        SerializedProperty _speed;
         SerializedProperty _volume;
-        SerializedProperty _constraint;
+        SerializedProperty _speed;
         SerializedProperty _noiseFrequency;
+        SerializedProperty _noiseSpread;
         SerializedProperty _noiseMotion;
 
         void OnEnable()
@@ -32,10 +32,10 @@ namespace Swarm
             _material = serializedObject.FindProperty("_material");
             _gradient = serializedObject.FindProperty("_gradient");
 
-            _speed = serializedObject.FindProperty("_speed");
             _volume = serializedObject.FindProperty("_volume");
-            _constraint = serializedObject.FindProperty("_constraint");
+            _speed = serializedObject.FindProperty("_speed");
             _noiseFrequency = serializedObject.FindProperty("_noiseFrequency");
+            _noiseSpread = serializedObject.FindProperty("_noiseSpread");
             _noiseMotion = serializedObject.FindProperty("_noiseMotion");
         }
 
@@ -56,8 +56,8 @@ namespace Swarm
 
             EditorGUILayout.PropertyField(_speed);
             EditorGUILayout.PropertyField(_volume);
-            EditorGUILayout.PropertyField(_constraint);
             EditorGUILayout.PropertyField(_noiseFrequency);
+            EditorGUILayout.PropertyField(_noiseSpread);
             EditorGUILayout.PropertyField(_noiseMotion);
 
             serializedObject.ApplyModifiedProperties();
