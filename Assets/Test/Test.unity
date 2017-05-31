@@ -341,7 +341,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1452801456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -392,7 +392,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1575138650
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -404,11 +404,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4a5fda7d0d9e92468f32bd6dbbf718f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _instanceCount: 6000
+  _instanceCount: 4000
   _template: {fileID: 11400000, guid: 407b7afb8fbe855408cc9bf4dd39058a, type: 2}
   _radius: 0.008
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
+  _spread: 1
   _length: 0.6
   _noiseFrequency: 0.7
   _noiseMotion: {x: 0, y: 0.04, z: 0}
@@ -483,7 +484,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 1392dc8849c4ad448879f0e14954e36e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 1392dc8849c4ad448879f0e14954e36e, type: 3}
