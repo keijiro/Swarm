@@ -9,8 +9,8 @@ There are two types of renderers in *Swarm*.
 
 **Swirling Swarm**
 
-![screenshot](http://i.imgur.com/XoOMqTIm.png)
-![screenshot](http://i.imgur.com/NNFsWBDm.png)
+![screenshot](http://i.imgur.com/qyKgqUg.gif)
+![screenshot](http://i.imgur.com/hNgbg86.gif)
 
 *Swirling Swarm* simulates particle motion within a [divergence-free noise
 field] and draws trace lines along it. The simulation is reset in every frame,
@@ -19,8 +19,8 @@ the swirls are slowly moving around and changing their shapes.
 
 **Crawling Swarm**
 
-![screenshot](http://i.imgur.com/SkIZUAT.gif)
-![screenshot](http://i.imgur.com/tci4x1V.gif)
+![screenshot](http://i.imgur.com/J9XxrgG.gif)
+![screenshot](http://i.imgur.com/sZGZsXR.gif)
 
 The basic concept of *Crawling Swarm* is the same to *Swirling Swarm*; it
 simulates particle motion within a noise field, but it's constrained with a
