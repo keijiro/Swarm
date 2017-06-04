@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54276434dda9c694e85abaf98cdd981d, type: 3}
-  m_Name: Gradient
+  m_Name: Gradient Rainbow
   m_EditorClassIdentifier: 
   _redCoeffs: {x: 0.57, y: 0.459, z: 1, w: 0}
   _greenCoeffs: {x: 0.49, y: 0.278, z: 0.85, w: 0.76}
