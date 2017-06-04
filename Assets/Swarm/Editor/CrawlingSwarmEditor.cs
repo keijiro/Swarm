@@ -11,11 +11,8 @@ namespace Swarm
     public class CrawlingSwarmEditor : Editor
     {
         SerializedProperty _instanceCount;
-
         SerializedProperty _template;
         SerializedProperty _radius;
-        SerializedProperty _material;
-        SerializedProperty _gradient;
 
         SerializedProperty _volume;
         SerializedProperty _speed;
@@ -23,20 +20,30 @@ namespace Swarm
         SerializedProperty _noiseSpread;
         SerializedProperty _noiseMotion;
 
+        SerializedProperty _material;
+        SerializedProperty _gradient;
+
+        static class Labels
+        {
+            public static GUIContent frequency = new GUIContent("Frequency");
+            public static GUIContent spread = new GUIContent("Spread");
+            public static GUIContent motion = new GUIContent("Motion");
+        }
+
         void OnEnable()
         {
             _instanceCount = serializedObject.FindProperty("_instanceCount");
-
             _template = serializedObject.FindProperty("_template");
             _radius = serializedObject.FindProperty("_radius");
-            _material = serializedObject.FindProperty("_material");
-            _gradient = serializedObject.FindProperty("_gradient");
 
             _volume = serializedObject.FindProperty("_volume");
             _speed = serializedObject.FindProperty("_speed");
             _noiseFrequency = serializedObject.FindProperty("_noiseFrequency");
             _noiseSpread = serializedObject.FindProperty("_noiseSpread");
             _noiseMotion = serializedObject.FindProperty("_noiseMotion");
+
+            _material = serializedObject.FindProperty("_material");
+            _gradient = serializedObject.FindProperty("_gradient");
         }
 
         public override void OnInspectorGUI()
@@ -44,21 +51,22 @@ namespace Swarm
             serializedObject.Update();
 
             EditorGUILayout.PropertyField(_instanceCount);
-
-            EditorGUILayout.Space();
-
             EditorGUILayout.PropertyField(_template);
+            EditorGUI.indentLevel++;
             EditorGUILayout.PropertyField(_radius);
-            EditorGUILayout.PropertyField(_material);
-            EditorGUILayout.PropertyField(_gradient);
-
-            EditorGUILayout.Space();
+            EditorGUI.indentLevel--;
 
             EditorGUILayout.PropertyField(_speed);
             EditorGUILayout.PropertyField(_volume);
-            EditorGUILayout.PropertyField(_noiseFrequency);
-            EditorGUILayout.PropertyField(_noiseSpread);
-            EditorGUILayout.PropertyField(_noiseMotion);
+            EditorGUILayout.LabelField("Noise Field");
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(_noiseFrequency, Labels.frequency);
+            EditorGUILayout.PropertyField(_noiseSpread, Labels.spread);
+            EditorGUILayout.PropertyField(_noiseMotion, Labels.motion);
+            EditorGUI.indentLevel--;
+
+            EditorGUILayout.PropertyField(_material);
+            EditorGUILayout.PropertyField(_gradient);
 
             serializedObject.ApplyModifiedProperties();
         }

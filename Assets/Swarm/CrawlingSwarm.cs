@@ -7,20 +7,15 @@ using DFVolume;
 
 namespace Swarm
 {
-    // Distance-field constrained swarm
     public sealed class CrawlingSwarm : MonoBehaviour
     {
-        #region Basic settings
+        #region Instancing properties
 
         [SerializeField] int _instanceCount = 1000;
 
         public int instanceCount {
             get { return _instanceCount; }
         }
-
-        #endregion
-
-        #region Render settings
 
         [SerializeField] TubeTemplate _template;
 
@@ -35,22 +30,9 @@ namespace Swarm
             set { _radius = value; }
         }
 
-        [SerializeField] Material _material;
-
-        public Material material {
-            get { return _material; }
-        }
-
-        [SerializeField] CosineGradient _gradient;
-
-        public CosineGradient gradient {
-            get { return _gradient; }
-            set { _gradient = value; }
-        }
-
         #endregion
 
-        #region Dynamics settings
+        #region Dynamics properties
 
         [SerializeField] float _speed = 0.75f;
 
@@ -88,6 +70,23 @@ namespace Swarm
 
         #endregion
 
+        #region Material properties
+
+        [SerializeField] Material _material;
+
+        public Material material {
+            get { return _material; }
+        }
+
+        [SerializeField] CosineGradient _gradient;
+
+        public CosineGradient gradient {
+            get { return _gradient; }
+            set { _gradient = value; }
+        }
+
+        #endregion
+
         #region Hidden attributes
 
         [SerializeField, HideInInspector] ComputeShader _compute;
@@ -119,6 +118,10 @@ namespace Swarm
         void OnValidate()
         {
             _instanceCount = Mathf.Max(kThreadCount, _instanceCount);
+            _radius = Mathf.Max(0, _radius);
+            _speed = Mathf.Max(0, _speed);
+            _noiseFrequency = Mathf.Max(0, _noiseFrequency);
+            _noiseSpread = Mathf.Max(0, _noiseSpread);
         }
 
         void Start()
@@ -140,35 +143,20 @@ namespace Swarm
 
             // Initialize the position buffer.
             var kernel = _compute.FindKernel("CrawlingInit");
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
-            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
-
-            // Initialize the update kernel.
-            kernel = _compute.FindKernel("CrawlingUpdate");
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
-
-            // Initialize the reconstruction kernel.
-            kernel = _compute.FindKernel("CrawlingReconstruct");
-            _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
+            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
+            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-            // Initialize the mateiral.
-            _material.SetBuffer("_PositionBuffer", _positionBuffer);
-            _material.SetBuffer("_TangentBuffer", _tangentBuffer);
-            _material.SetBuffer("_NormalBuffer", _normalBuffer);
-            _material.SetInt("_InstanceCount", InstanceCount);
-            _material.SetInt("_HistoryLength", HistoryLength);
-
-            // This property block is used only for avoiding an instancing bug.
-            _props = new MaterialPropertyBlock();
-            _props.SetFloat("_UniqueID", Random.value);
+            if (_props == null)
+            {
+                // This property block is used only for avoiding an instancing bug.
+                _props = new MaterialPropertyBlock();
+                _props.SetFloat("_UniqueID", Random.value);
+            }
         }
 
         void OnDestroy()
@@ -190,33 +178,51 @@ namespace Swarm
                 var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
                 var offset2 = InstanceCount * ((_frameCount + 2) % HistoryLength);
 
-                // Update the parameters for the compute kernels.
+                // Invoke the update compute kernel.
+                var kernel = _compute.FindKernel("CrawlingUpdate");
+
                 _compute.SetInt("IndexOffset0", offset0);
                 _compute.SetInt("IndexOffset1", offset1);
                 _compute.SetInt("IndexOffset2", offset2);
+
                 _compute.SetFloat("Speed", _speed * delta);
                 _compute.SetFloat("NoiseFrequency", _noiseFrequency);
                 _compute.SetFloat("NoiseSpread", _noiseSpread / InstanceCount);
                 _compute.SetFloat("NoiseOffset", Time.time * _noiseMotion);
 
-                // Update the position buffer.
-                var kernel = _compute.FindKernel("CrawlingUpdate");
+                _compute.SetTexture(kernel, "DFVolume", _volume.texture);
+                _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+
                 _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-                // Reconstruct tangent/normal vectors.
+                // Invoke the reconstruction kernel.
                 kernel = _compute.FindKernel("CrawlingReconstruct");
+
+                _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
+                _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
+                _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
+
                 _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
             }
 
-            // Draw the meshes with instancing.
-            _material.SetInt("_IndexOffset", _frameCount + 3);
+            // Draw the mesh with instancing.
             _material.SetFloat("_Radius", _radius);
+
             _material.SetVector("_GradientA", _gradient.coeffsA);
             _material.SetVector("_GradientB", _gradient.coeffsB);
             _material.SetVector("_GradientC", _gradient.coeffsC2);
             _material.SetVector("_GradientD", _gradient.coeffsD2);
+
             _material.SetMatrix("_LocalToWorld", transform.localToWorldMatrix);
             _material.SetMatrix("_WorldToLocal", transform.worldToLocalMatrix);
+
+            _material.SetBuffer("_PositionBuffer", _positionBuffer);
+            _material.SetBuffer("_TangentBuffer", _tangentBuffer);
+            _material.SetBuffer("_NormalBuffer", _normalBuffer);
+
+            _material.SetInt("_IndexOffset", _frameCount + 3);
+            _material.SetInt("_InstanceCount", InstanceCount);
+            _material.SetInt("_HistoryLength", HistoryLength);
 
             Graphics.DrawMeshInstancedIndirect(
                 _template.mesh, 0, _material,
