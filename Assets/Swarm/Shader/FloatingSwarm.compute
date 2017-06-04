@@ -1,0 +1,164 @@
+// Swarm - Special renderer that draws a swarm of swirling/crawling lines.
+// https://github.com/keijiro/Swarm
+
+#pragma kernel FloatingInit
+#pragma kernel FloatingUpdate
+#pragma kernel FloatingReconstruct
+
+#include "UnityCG.cginc"
+#include "SimplexNoise3D.cginc"
+
+RWStructuredBuffer<float4> PositionBuffer;
+RWStructuredBuffer<float4> VelocityBuffer;
+RWStructuredBuffer<float4> TangentBuffer;
+RWStructuredBuffer<float4> NormalBuffer;
+
+StructuredBuffer<float4> PositionBufferRO;
+
+CBUFFER_START(Params)
+
+    uint InstanceCount;
+    uint HistoryLength;
+
+    float RandomSeed;
+    float DeltaTime;
+
+    float4 Attractor; // x, y, z, spread
+    float2 Force; // min, max
+    float Drag;
+
+    float HeadNoiseForce;
+    float HeadNoiseFrequency;
+    float TrailNoiseVelocity;
+    float TrailNoiseFrequency;
+    float NoiseSpread;
+    float3 NoiseOffset;
+
+CBUFFER_END
+
+// PRNG
+float Random(uint id, float u)
+{
+    u = u * 0.0018372 + RandomSeed * 0.0023849;
+    float v = id * 0.0013345;
+    float f = dot(float2(12.9898, 78.233), float2(u, v));
+    return frac(43758.5453 * sin(f));
+}
+
+// Divergence-free noise field
+float3 NoiseField(uint id , float3 p)
+{
+    p += float3(0.9, 1.0, 1.1) * (NoiseSpread * id);
+    float3 n1 = snoise(p).xyz;
+    float3 n2 = snoise(p + float3(15.3, 13.1, 17.4)).xyz;
+    return cross(n1, n2);
+}
+
+// Attractor position with spread parameter
+float3 AttractorPosition(uint id)
+{
+    float u = Random(id, 1) * UNITY_PI * 2;
+    float z = Random(id, 2) * 2 - 1;
+    float l = Random(id, 3);
+    float3 d = float3(float2(cos(u), sin(u)) * sqrt(1 - z * z), z) * sqrt(l);
+    return Attractor.xyz + d * Attractor.w;
+}
+
+[numthreads(64, 1, 1)]
+void FloatingInit(uint id : SV_DispatchThreadID)
+{
+    float3 p = AttractorPosition(id);
+
+    for (uint i = 0; i < HistoryLength; i++)
+    {
+        uint offs = id + i * InstanceCount;
+        PositionBuffer[offs] = float4(p, 0);
+        TangentBuffer[offs] = float4(0, 0, 1, 0);
+        NormalBuffer[offs] = float4(1, 0, 0, 0);
+    }
+
+    VelocityBuffer[id] = 0;
+}
+
+[numthreads(64, 1, 1)]
+void FloatingUpdate(uint id : SV_DispatchThreadID)
+{
+    // Update tailing points with simple swirling motion.
+    float3 p_prev = PositionBuffer[id].xyz;
+
+    for (uint i = 1; i < HistoryLength; i++)
+    {
+        float3 np = (p_prev + NoiseOffset) * TrailNoiseFrequency;
+        float3 v = NoiseField(id, np) * TrailNoiseVelocity;
+        float3 p_update = p_prev + v * DeltaTime;
+
+        uint idx = id + i * InstanceCount;
+        p_prev = PositionBuffer[idx].xyz;
+        PositionBuffer[idx].xyz = p_update;
+    }
+
+    // Retrieve the previous position and velocity.
+    float3 p = PositionBuffer[id].xyz;
+    float3 v = VelocityBuffer[id].xyz;
+
+    // Force from the attactor.
+    float accel = lerp(Force.x, Force.y, Random(id, 4));
+    float3 f_a = (AttractorPosition(id) - p) * accel;
+
+    // Force from the noise field.
+    float3 np = (p + NoiseOffset) * HeadNoiseFrequency;
+    float3 f_n = NoiseField(id, np) * HeadNoiseForce;
+
+    // Apply drag and acceleration force.
+    v = v * Drag + (f_a + f_n) * DeltaTime;
+
+    // Update the head position.
+    p += v * DeltaTime;
+
+    PositionBuffer[id].xyz = p;
+    VelocityBuffer[id].xyz = v;
+}
+
+[numthreads(64, 1, 1)]
+void FloatingReconstruct(uint id : SV_DispatchThreadID)
+{
+    // Reconstruct the first point.
+    float3 p0 = PositionBufferRO[id].xyz;
+    float3 p1 = PositionBufferRO[id + InstanceCount].xyz;
+
+    float3 t0 = normalize(p1 - p0);
+    float3 b0 = cross(t0, normalize(p0));
+    float3 n0 = cross(b0, t0);
+
+    TangentBuffer[id] = float4(t0, 0);
+    NormalBuffer[id] = float4(n0, 0);
+
+    // Sequentially reconstruct the points excepting the last one.
+    for (uint i = 1; i < HistoryLength - 1; i++)
+    {
+        uint index = id + i * InstanceCount;
+
+        float3 p0 = PositionBufferRO[index - InstanceCount].xyz;
+        float3 p2 = PositionBufferRO[index + InstanceCount].xyz;
+
+        float3 t1 = normalize(p2 - p0);
+        float3 n1 = normalize(cross(b0, t1));
+
+        TangentBuffer[index] = float4(t1, 0);
+        NormalBuffer[index] = float4(n1, 0);
+
+        b0 = cross(t1, n1);
+    }
+
+    // Reconstruct the last point.
+    uint index = id + (HistoryLength - 1) * InstanceCount;
+
+    p0 = PositionBufferRO[index - InstanceCount].xyz;
+    p1 = PositionBufferRO[index].xyz;
+
+    float3 t1 = normalize(p1 - p0);
+    float3 n1 = normalize(cross(b0, t1));
+
+    TangentBuffer[index] = float4(t1, 0);
+    NormalBuffer[index] = float4(n1, 0);
+}

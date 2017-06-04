@@ -3,11 +3,10 @@
 
 using UnityEngine;
 using Klak.Chromatics;
-using DFVolume;
 
 namespace Swarm
 {
-    public sealed class CrawlingSwarm : MonoBehaviour
+    public sealed class FloatingSwarm : MonoBehaviour
     {
         #region Instancing properties
 
@@ -32,26 +31,80 @@ namespace Swarm
 
         #endregion
 
-        #region Dynamics properties
+        #region Dynamics and attractor properteis
 
-        [SerializeField] float _speed = 0.75f;
+        [SerializeField] Transform _attractor;
 
-        public float speed {
-            get { return _speed; }
-            set { _speed = value; }
+        public Transform attractor {
+            get { return _attractor; }
+            set { _attractor = value; }
         }
 
-        [SerializeField] VolumeData _volume;
+        [SerializeField] Vector3 _attractorPosition = Vector3.zero;
 
-        public VolumeData volume {
-            get { return _volume; }
+        public Vector3 attractorPosition {
+            get { return _attractorPosition; }
+            set { _attractorPosition = value; }
         }
 
-        [SerializeField] float _noiseFrequency = 4;
+        [SerializeField] float _attractorSpread = 0.01f;
 
-        public float noiseFrequency {
-            get { return _noiseFrequency; }
-            set { _noiseFrequency = value; }
+        public float attractorSpread {
+            get { return _attractorSpread; }
+            set { _attractorSpread = value; }
+        }
+
+        [SerializeField] float _attractorForce = 5.0f;
+
+        public float attractorForce {
+            get { return _attractorForce; }
+            set { _attractorForce = value; }
+        }
+
+        [SerializeField, Range(0, 1)] float _forceRandomness = 0.5f;
+
+        public float forceRandomness {
+            get { return _forceRandomness; }
+            set { _forceRandomness = value; }
+        }
+
+        [SerializeField, Range(0, 6)] float _drag = 2.0f;
+
+        public float drag {
+            get { return _drag; }
+            set { _drag = value; }
+        }
+
+        #endregion
+
+        #region Noise field properties
+
+        [SerializeField] float _headNoiseForce = 0.5f;
+
+        public float headNoiseForce {
+            get { return _headNoiseForce; }
+            set { _headNoiseForce = value; }
+        }
+
+        [SerializeField] float _headNoiseFrequency = 0.5f;
+
+        public float headNoiseFrequency {
+            get { return _headNoiseFrequency; }
+            set { _headNoiseFrequency = value; }
+        }
+
+        [SerializeField] float _trailNoiseVelocity = 0.01f;
+
+        public float trailNoiseVelocity {
+            get { return _trailNoiseVelocity; }
+            set { _trailNoiseVelocity = value; }
+        }
+
+        [SerializeField] float _trailNoiseFrequency = 0.5f;
+
+        public float trailNoiseFrequency {
+            get { return _trailNoiseFrequency; }
+            set { _trailNoiseFrequency = value; }
         }
 
         [SerializeField] float _noiseSpread = 0.5f;
@@ -61,7 +114,7 @@ namespace Swarm
             set { _noiseSpread = value; }
         }
 
-        [SerializeField] float _noiseMotion = 0.1f;
+        [SerializeField] float _noiseMotion = 0.15f;
 
         public float noiseMotion {
             get { return _noiseMotion; }
@@ -87,6 +140,16 @@ namespace Swarm
 
         #endregion
 
+        #region Misc properties
+
+        [SerializeField] int _randomSeed;
+
+        public int randomSeed {
+            set { _randomSeed = value; }
+        }
+
+        #endregion
+
         #region Hidden attributes
 
         [SerializeField, HideInInspector] ComputeShader _compute;
@@ -97,10 +160,19 @@ namespace Swarm
 
         ComputeBuffer _drawArgsBuffer;
         ComputeBuffer _positionBuffer;
+        ComputeBuffer _velocityBuffer;
         ComputeBuffer _tangentBuffer;
         ComputeBuffer _normalBuffer;
         MaterialPropertyBlock _props;
-        int _frameCount;
+        Vector3 _noiseOffset;
+
+        Vector4 AttractorVector {
+            get {
+                var p = _attractor ? _attractor.position : _attractorPosition;
+                p = transform.InverseTransformPoint(p);
+                return new Vector4(p.x, p.y, p.z, _attractorSpread);
+            }
+        }
 
         #endregion
 
@@ -119,8 +191,11 @@ namespace Swarm
         {
             _instanceCount = Mathf.Max(kThreadCount, _instanceCount);
             _radius = Mathf.Max(0, _radius);
-            _speed = Mathf.Max(0, _speed);
-            _noiseFrequency = Mathf.Max(0, _noiseFrequency);
+            _attractorSpread = Mathf.Max(0, _attractorSpread);
+            _headNoiseForce = Mathf.Max(0, _headNoiseForce);
+            _headNoiseFrequency = Mathf.Max(0, _headNoiseFrequency);
+            _trailNoiseVelocity = Mathf.Max(0, _trailNoiseVelocity);
+            _trailNoiseFrequency = Mathf.Max(0, _trailNoiseFrequency);
             _noiseSpread = Mathf.Max(0, _noiseSpread);
         }
 
@@ -137,31 +212,33 @@ namespace Swarm
 
             // Allocate compute buffers.
             _positionBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
+            _velocityBuffer = new ComputeBuffer(InstanceCount, 16);
             _tangentBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
             _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
-            // Initialize the compute buffers.
-            var kernel = _compute.FindKernel("CrawlingInit");
+            // Invoke the initialization kernel.
+            var kernel = _compute.FindKernel("FloatingInit");
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
+            _compute.SetVector("Attractor", AttractorVector);
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+            _compute.SetBuffer(kernel, "VelocityBuffer", _velocityBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-            if (_props == null)
-            {
-                // This property block is used only for avoiding an instancing bug.
-                _props = new MaterialPropertyBlock();
-                _props.SetFloat("_UniqueID", Random.value);
-            }
+            // This property block is used only for avoiding an instancing bug.
+            _props = new MaterialPropertyBlock();
+            _props.SetFloat("_UniqueID", Random.value);
+
+            _noiseOffset = Vector3.one * _randomSeed;
         }
 
         void OnDestroy()
         {
             _drawArgsBuffer.Release();
             _positionBuffer.Release();
+            _velocityBuffer.Release();
             _tangentBuffer.Release();
             _normalBuffer.Release();
         }
@@ -172,30 +249,34 @@ namespace Swarm
 
             if (delta > 0)
             {
-                // Index offset on the position buffer.
-                var offset0 = InstanceCount * ( _frameCount      % HistoryLength);
-                var offset1 = InstanceCount * ((_frameCount + 1) % HistoryLength);
-                var offset2 = InstanceCount * ((_frameCount + 2) % HistoryLength);
-
                 // Invoke the update compute kernel.
-                var kernel = _compute.FindKernel("CrawlingUpdate");
+                var kernel = _compute.FindKernel("FloatingUpdate");
 
-                _compute.SetInt("IndexOffset0", offset0);
-                _compute.SetInt("IndexOffset1", offset1);
-                _compute.SetInt("IndexOffset2", offset2);
+                _compute.SetInt("_InstanceCount", InstanceCount);
+                _compute.SetInt("_HistoryLength", HistoryLength);
 
-                _compute.SetFloat("Speed", _speed * delta);
-                _compute.SetFloat("NoiseFrequency", _noiseFrequency);
+                _compute.SetFloat("RandomSeed", _randomSeed);
+                _compute.SetFloat("DeltaTime", delta);
+
+                _compute.SetVector("Attractor", AttractorVector);
+                var minForce = _attractorForce * (1 - _forceRandomness);
+                _compute.SetVector("Force", new Vector2(minForce, _attractorForce));
+                _compute.SetFloat("Drag", Mathf.Exp(-_drag * delta));
+
+                _compute.SetFloat("HeadNoiseForce", _headNoiseForce);
+                _compute.SetFloat("HeadNoiseFrequency", _headNoiseFrequency);
+                _compute.SetFloat("TrailNoiseVelocity", _trailNoiseVelocity);
+                _compute.SetFloat("TrailNoiseFrequency", _trailNoiseFrequency);
                 _compute.SetFloat("NoiseSpread", _noiseSpread / InstanceCount);
-                _compute.SetFloat("NoiseOffset", Time.time * _noiseMotion);
+                _compute.SetVector("NoiseOffset", _noiseOffset);
 
-                _compute.SetTexture(kernel, "DFVolume", _volume.texture);
                 _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+                _compute.SetBuffer(kernel, "VelocityBuffer", _velocityBuffer);
 
                 _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
                 // Invoke the reconstruction kernel.
-                kernel = _compute.FindKernel("CrawlingReconstruct");
+                kernel = _compute.FindKernel("FloatingReconstruct");
 
                 _compute.SetBuffer(kernel, "PositionBufferRO", _positionBuffer);
                 _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
@@ -219,7 +300,6 @@ namespace Swarm
             _material.SetBuffer("_TangentBuffer", _tangentBuffer);
             _material.SetBuffer("_NormalBuffer", _normalBuffer);
 
-            _material.SetInt("_IndexOffset", _frameCount + 3);
             _material.SetInt("_InstanceCount", InstanceCount);
             _material.SetInt("_HistoryLength", HistoryLength);
 
@@ -229,7 +309,7 @@ namespace Swarm
                 _drawArgsBuffer, 0, _props
             );
 
-            _frameCount++;
+            _noiseOffset += Vector3.one * _noiseMotion * delta;
         }
 
         #endregion

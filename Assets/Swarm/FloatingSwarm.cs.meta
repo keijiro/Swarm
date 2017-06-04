@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: bcbd8b22430997f4abb83e3a5525138e
+timeCreated: 1496557942
+licenseType: Pro
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - _template: {fileID: 11400000, guid: 2f3e96656444aa24b895cfe3b9d3cc1d, type: 2}
+  - _attractor: {instanceID: 0}
+  - _material: {fileID: 2100000, guid: a28f050c68a3c9943ac87aeb69e40adc, type: 2}
+  - _gradient: {fileID: 11400000, guid: 856cce886f41a1841b8637b0c897811c, type: 2}
+  - _compute: {fileID: 7200000, guid: ab946a4ad9c5b0041892c579a6c413c4, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

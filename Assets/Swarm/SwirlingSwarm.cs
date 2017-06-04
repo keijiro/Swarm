@@ -81,7 +81,6 @@ namespace Swarm
 
         #endregion
 
-
         #region Hidden attributes
 
         [SerializeField, HideInInspector] ComputeShader _compute;
