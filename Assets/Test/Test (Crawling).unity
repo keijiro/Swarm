@@ -377,56 +377,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1575138649
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 5
-  m_Component:
-  - component: {fileID: 1575138651}
-  - component: {fileID: 1575138650}
-  m_Layer: 0
-  m_Name: Swirling Swarm
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &1575138650
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1575138649}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d4a5fda7d0d9e92468f32bd6dbbf718f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _instanceCount: 4000
-  _template: {fileID: 11400000, guid: 407b7afb8fbe855408cc9bf4dd39058a, type: 2}
-  _radius: 0.01
-  _length: 0.3
-  _spread: 0.96
-  _noiseFrequency: 0.7
-  _noiseMotion: {x: 0, y: 0.04, z: 0}
-  _material: {fileID: 2100000, guid: b3e73ed1912d1474f998247575b31fe5, type: 2}
-  _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
-  _compute: {fileID: 7200000, guid: 70e8fc98ef3d1974485d153a4e66dbcc, type: 3}
---- !u!4 &1575138651
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1575138649}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1965791156
 Prefab:
   m_ObjectHideFlags: 0
@@ -464,7 +414,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 1392dc8849c4ad448879f0e14954e36e, type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 1392dc8849c4ad448879f0e14954e36e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
