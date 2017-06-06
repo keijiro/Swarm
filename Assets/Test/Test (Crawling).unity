@@ -336,7 +336,7 @@ GameObject:
   - component: {fileID: 1452801457}
   - component: {fileID: 1452801456}
   m_Layer: 0
-  m_Name: Crawler Swarm
+  m_Name: Crawling Swarm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -363,6 +363,7 @@ MonoBehaviour:
   _noiseMotion: 0.1
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
+  _randomSeed: 100
   _compute: {fileID: 7200000, guid: e579db230e141ad4baa8636ac84ed1ef, type: 3}
 --- !u!4 &1452801457
 Transform:

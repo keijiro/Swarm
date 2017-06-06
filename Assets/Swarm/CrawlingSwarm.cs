@@ -87,6 +87,16 @@ namespace Swarm
 
         #endregion
 
+        #region Misc properties
+
+        [SerializeField] int _randomSeed;
+
+        public int randomSeed {
+            set { _randomSeed = value; }
+        }
+
+        #endregion
+
         #region Hidden attributes
 
         [SerializeField, HideInInspector] ComputeShader _compute;
@@ -144,6 +154,7 @@ namespace Swarm
             var kernel = _compute.FindKernel("CrawlingInit");
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
+            _compute.SetFloat("RandomSeed", _randomSeed);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);

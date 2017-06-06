@@ -21,6 +21,7 @@ SamplerState samplerDFVolume;
 CBUFFER_START(Params)
     uint InstanceCount;
     uint HistoryLength;
+    float RandomSeed;
     uint IndexOffset0;
     uint IndexOffset1;
     uint IndexOffset2;
@@ -32,7 +33,7 @@ CBUFFER_END
 
 float Random(float u, float v)
 {
-    float f = dot(float2(12.9898, 78.233), float2(u, v));
+    float f = dot(float2(12.9898, 78.233), float2(u, v)) + RandomSeed;
     return frac(43758.5453 * sin(f));
 }
 
