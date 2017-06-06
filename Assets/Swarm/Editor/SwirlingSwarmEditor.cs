@@ -22,6 +22,8 @@ namespace Swarm
         SerializedProperty _material;
         SerializedProperty _gradient;
 
+        SerializedProperty _randomSeed;
+
         static class Labels
         {
             public static GUIContent frequency = new GUIContent("Frequency");
@@ -41,6 +43,8 @@ namespace Swarm
 
             _material = serializedObject.FindProperty("_material");
             _gradient = serializedObject.FindProperty("_gradient");
+
+            _randomSeed = serializedObject.FindProperty("_randomSeed");
         }
 
         public override void OnInspectorGUI()
@@ -63,6 +67,8 @@ namespace Swarm
 
             EditorGUILayout.PropertyField(_material);
             EditorGUILayout.PropertyField(_gradient);
+
+            EditorGUILayout.PropertyField(_randomSeed);
 
             serializedObject.ApplyModifiedProperties();
         }

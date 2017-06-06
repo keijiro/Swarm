@@ -362,6 +362,7 @@ MonoBehaviour:
   _noiseMotion: {x: 0, y: 0.04, z: 0}
   _material: {fileID: 2100000, guid: b3e73ed1912d1474f998247575b31fe5, type: 2}
   _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
+  _randomSeed: 123
   _compute: {fileID: 7200000, guid: 70e8fc98ef3d1974485d153a4e66dbcc, type: 3}
 --- !u!4 &1575138651
 Transform:

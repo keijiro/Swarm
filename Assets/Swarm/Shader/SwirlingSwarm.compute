@@ -16,6 +16,7 @@ StructuredBuffer<float4> PositionBufferRO;
 CBUFFER_START(Params)
     uint InstanceCount;
     uint HistoryLength;
+    float RandomSeed;
     float Spread;
     float StepWidth;
     float NoiseFrequency;
@@ -24,7 +25,7 @@ CBUFFER_END
 
 float Random(float u, float v)
 {
-    float f = dot(float2(12.9898, 78.233), float2(u, v));
+    float f = dot(float2(12.9898, 78.233), float2(u, v)) + RandomSeed;
     return frac(43758.5453 * sin(f));
 }
 

@@ -81,6 +81,16 @@ namespace Swarm
 
         #endregion
 
+        #region Misc properties
+
+        [SerializeField] int _randomSeed;
+
+        public int randomSeed {
+            set { _randomSeed = value; }
+        }
+
+        #endregion
+
         #region Hidden attributes
 
         [SerializeField, HideInInspector] ComputeShader _compute;
@@ -140,6 +150,8 @@ namespace Swarm
                 _props = new MaterialPropertyBlock();
                 _props.SetFloat("_UniqueID", Random.value);
             }
+
+            _noiseOffset = Vector3.one * _randomSeed;
         }
 
         void OnDisable()
@@ -161,6 +173,7 @@ namespace Swarm
 
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
+            _compute.SetFloat("RandomSeed", _randomSeed);
             _compute.SetFloat("Spread", _spread);
             _compute.SetFloat("StepWidth", _length / _template.segments);
             _compute.SetFloat("NoiseFrequency", _noiseFrequency);
