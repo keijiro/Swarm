@@ -6,7 +6,6 @@ using Klak.Chromatics;
 
 namespace Swarm
 {
-    [ExecuteInEditMode]
     public sealed class SwirlingSwarm : MonoBehaviour
     {
         #region Instancing properties
@@ -128,7 +127,7 @@ namespace Swarm
             _noiseFrequency = Mathf.Max(0, _noiseFrequency);
         }
 
-        void OnEnable()
+        void Start()
         {
             // Initialize the indirect draw args buffer.
             _drawArgsBuffer = new ComputeBuffer(
@@ -144,30 +143,28 @@ namespace Swarm
             _tangentBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
             _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
-            if (_props == null)
-            {
-                // This property block is used only for avoiding an instancing bug.
-                _props = new MaterialPropertyBlock();
-                _props.SetFloat("_UniqueID", Random.value);
-            }
+            // This property block is used only for avoiding an instancing bug.
+            _props = new MaterialPropertyBlock();
+            _props.SetFloat("_UniqueID", Random.value);
+
+            // Clone the given material before using.
+            _material = new Material(_material);
+            _material.name += " (cloned)";
 
             _noiseOffset = Vector3.one * _randomSeed;
         }
 
-        void OnDisable()
+        void OnDestroy()
         {
             _drawArgsBuffer.Release();
             _positionBuffer.Release();
             _tangentBuffer.Release();
             _normalBuffer.Release();
+            Destroy(_material);
         }
 
         void Update()
         {
-            // Move the noise field.
-            if (Application.isPlaying)
-                _noiseOffset += _noiseMotion * Time.deltaTime;
-
             // Invoke the update compute kernel.
             var kernel = _compute.FindKernel("SwirlingUpdate");
 
@@ -215,6 +212,9 @@ namespace Swarm
                 new Bounds(transform.position, transform.lossyScale * 5),
                 _drawArgsBuffer, 0, _props
             );
+
+            // Move the noise field.
+            _noiseOffset += _noiseMotion * Time.deltaTime;
         }
 
         #endregion

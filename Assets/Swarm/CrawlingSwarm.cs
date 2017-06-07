@@ -169,12 +169,13 @@ namespace Swarm
             _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
             _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
 
-            if (_props == null)
-            {
-                // This property block is used only for avoiding an instancing bug.
-                _props = new MaterialPropertyBlock();
-                _props.SetFloat("_UniqueID", Random.value);
-            }
+            // This property block is used only for avoiding an instancing bug.
+            _props = new MaterialPropertyBlock();
+            _props.SetFloat("_UniqueID", Random.value);
+
+            // Clone the given material before using.
+            _material = new Material(_material);
+            _material.name += " (cloned)";
         }
 
         void OnDestroy()
@@ -183,6 +184,7 @@ namespace Swarm
             _positionBuffer.Release();
             _tangentBuffer.Release();
             _normalBuffer.Release();
+            Destroy(_material);
         }
 
         void Update()

@@ -231,6 +231,10 @@ namespace Swarm
             _props = new MaterialPropertyBlock();
             _props.SetFloat("_UniqueID", Random.value);
 
+            // Clone the given material before using.
+            _material = new Material(_material);
+            _material.name += " (cloned)";
+
             _noiseOffset = Vector3.one * _randomSeed;
         }
 
@@ -241,6 +245,7 @@ namespace Swarm
             _velocityBuffer.Release();
             _tangentBuffer.Release();
             _normalBuffer.Release();
+            Destroy(_material);
         }
 
         void Update()
@@ -309,6 +314,7 @@ namespace Swarm
                 _drawArgsBuffer, 0, _props
             );
 
+            // Move the noise field.
             _noiseOffset += Vector3.one * _noiseMotion * delta;
         }
 
