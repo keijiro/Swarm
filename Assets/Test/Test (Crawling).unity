@@ -358,6 +358,7 @@ MonoBehaviour:
   _radius: 0.005
   _speed: 0.7
   _volume: {fileID: 11400000, guid: 33827603f26d861438dab734dfca23e1, type: 2}
+  _initialSpread: 0.25
   _noiseFrequency: 4
   _noiseSpread: 0.25
   _noiseMotion: 0.1

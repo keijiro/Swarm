@@ -14,8 +14,9 @@ namespace Swarm
         SerializedProperty _template;
         SerializedProperty _radius;
 
-        SerializedProperty _volume;
         SerializedProperty _speed;
+        SerializedProperty _volume;
+        SerializedProperty _initialSpread;
         SerializedProperty _noiseFrequency;
         SerializedProperty _noiseSpread;
         SerializedProperty _noiseMotion;
@@ -38,8 +39,9 @@ namespace Swarm
             _template = serializedObject.FindProperty("_template");
             _radius = serializedObject.FindProperty("_radius");
 
-            _volume = serializedObject.FindProperty("_volume");
             _speed = serializedObject.FindProperty("_speed");
+            _volume = serializedObject.FindProperty("_volume");
+            _initialSpread = serializedObject.FindProperty("_initialSpread");
             _noiseFrequency = serializedObject.FindProperty("_noiseFrequency");
             _noiseSpread = serializedObject.FindProperty("_noiseSpread");
             _noiseMotion = serializedObject.FindProperty("_noiseMotion");
@@ -62,6 +64,7 @@ namespace Swarm
 
             EditorGUILayout.PropertyField(_speed);
             EditorGUILayout.PropertyField(_volume);
+            EditorGUILayout.PropertyField(_initialSpread);
             EditorGUILayout.LabelField("Noise Field");
             EditorGUI.indentLevel++;
             EditorGUILayout.PropertyField(_noiseFrequency, Labels.frequency);

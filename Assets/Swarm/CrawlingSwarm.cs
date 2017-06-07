@@ -47,6 +47,13 @@ namespace Swarm
             get { return _volume; }
         }
 
+        [SerializeField] float _initialSpread = 0.4f;
+
+        public float initialSpread {
+            get { return _initialSpread; }
+            set { _initialSpread = value; }
+        }
+
         [SerializeField] float _noiseFrequency = 4;
 
         public float noiseFrequency {
@@ -155,6 +162,7 @@ namespace Swarm
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
             _compute.SetFloat("RandomSeed", _randomSeed);
+            _compute.SetFloat("InitialSpread", _initialSpread);
             _compute.SetTexture(kernel, "DFVolume", _volume.texture);
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
             _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
