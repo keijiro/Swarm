@@ -212,7 +212,7 @@ namespace Swarm
 
             Graphics.DrawMeshInstancedIndirect(
                 _template.mesh, 0, _material,
-                new Bounds(Vector3.zero, Vector3.one * 1.5f),
+                new Bounds(transform.position, transform.lossyScale * 5),
                 _drawArgsBuffer, 0, _props
             );
         }
