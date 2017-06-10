@@ -43,6 +43,7 @@ Shader "Swarm/Tube"
         uint _InstanceCount;
         uint _HistoryLength;
         uint _IndexOffset;
+        uint _IndexLimit;
 
         #endif
 
@@ -61,7 +62,7 @@ Shader "Swarm/Tube"
             float phi = v.vertex.x; // Angle in slice
             float cap = v.vertex.y; // -1:head, +1:tail
             float seg = v.vertex.z; // Segment index
-            uint iseg = (uint)seg;
+            uint iseg = min((uint)seg, _IndexLimit);
 
             // Parameter along the curve (used for coloring).
             float param = seg / _HistoryLength;

@@ -29,6 +29,13 @@ namespace Swarm
             set { _radius = value; }
         }
 
+        [SerializeField, Range(0, 1)] float _trim = 1;
+
+        public float trim {
+            get { return _trim; }
+            set { _trim = value; }
+        }
+
         #endregion
 
         #region Dynamics and attractor properteis
@@ -156,7 +163,7 @@ namespace Swarm
 
         #endregion
 
-        #region Private fields
+        #region Private members
 
         ComputeBuffer _drawArgsBuffer;
         ComputeBuffer _positionBuffer;
@@ -182,6 +189,24 @@ namespace Swarm
         int ThreadGroupCount { get { return _instanceCount / kThreadCount; } }
         int InstanceCount { get { return kThreadCount * ThreadGroupCount; } }
         int HistoryLength { get { return _template.segments + 1; } }
+
+        #endregion
+
+        #region Public Methods
+
+        public void ResetPositions()
+        {
+            // Invoke the initialization kernel.
+            var kernel = _compute.FindKernel("FloatingInit");
+            _compute.SetInt("InstanceCount", InstanceCount);
+            _compute.SetInt("HistoryLength", HistoryLength);
+            _compute.SetVector("Attractor", AttractorVector);
+            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+            _compute.SetBuffer(kernel, "VelocityBuffer", _velocityBuffer);
+            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
+            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
+            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
+        }
 
         #endregion
 
@@ -216,16 +241,7 @@ namespace Swarm
             _tangentBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
             _normalBuffer = new ComputeBuffer(HistoryLength * InstanceCount, 16);
 
-            // Invoke the initialization kernel.
-            var kernel = _compute.FindKernel("FloatingInit");
-            _compute.SetInt("InstanceCount", InstanceCount);
-            _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.SetVector("Attractor", AttractorVector);
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetBuffer(kernel, "VelocityBuffer", _velocityBuffer);
-            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
-            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
-            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
+            ResetPositions();
 
             // This property block is used only for avoiding an instancing bug.
             _props = new MaterialPropertyBlock();
@@ -307,6 +323,7 @@ namespace Swarm
 
             _material.SetInt("_InstanceCount", InstanceCount);
             _material.SetInt("_HistoryLength", HistoryLength);
+            _material.SetInt("_IndexLimit", (int)(_trim * HistoryLength));
 
             Graphics.DrawMeshInstancedIndirect(
                 _template.mesh, 0, _material,

@@ -206,6 +206,7 @@ namespace Swarm
 
             _material.SetInt("_InstanceCount", InstanceCount);
             _material.SetInt("_HistoryLength", HistoryLength);
+            _material.SetInt("_IndexLimit", HistoryLength);
 
             Graphics.DrawMeshInstancedIndirect(
                 _template.mesh, 0, _material,

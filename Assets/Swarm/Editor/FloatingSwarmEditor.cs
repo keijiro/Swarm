@@ -13,6 +13,7 @@ namespace Swarm
         SerializedProperty _instanceCount;
         SerializedProperty _template;
         SerializedProperty _radius;
+        SerializedProperty _trim;
 
         SerializedProperty _attractor;
         SerializedProperty _attractorPosition;
@@ -53,6 +54,7 @@ namespace Swarm
             _instanceCount = serializedObject.FindProperty("_instanceCount");
             _template = serializedObject.FindProperty("_template");
             _radius = serializedObject.FindProperty("_radius");
+            _trim = serializedObject.FindProperty("_trim");
 
             _attractor = serializedObject.FindProperty("_attractor");
             _attractorPosition = serializedObject.FindProperty("_attractorPosition");
@@ -83,6 +85,7 @@ namespace Swarm
             EditorGUILayout.PropertyField(_template);
             EditorGUI.indentLevel++;
             EditorGUILayout.PropertyField(_radius);
+            EditorGUILayout.PropertyField(_trim);
             EditorGUI.indentLevel--;
 
             EditorGUILayout.PropertyField(_attractor);
@@ -110,6 +113,9 @@ namespace Swarm
             EditorGUILayout.PropertyField(_randomSeed);
 
             serializedObject.ApplyModifiedProperties();
+
+            if (Application.isPlaying && GUILayout.Button("Reset"))
+                foreach (FloatingSwarm fs in targets) fs.ResetPositions();
         }
     }
 }
