@@ -13,7 +13,7 @@ Shader "Swarm/Tube"
         
         CGPROGRAM
 
-        #pragma surface surf Standard vertex:vert addshadow
+        #pragma surface surf Standard vertex:vert addshadow nolightmap
         #pragma instancing_options procedural:setup
 
         struct Input

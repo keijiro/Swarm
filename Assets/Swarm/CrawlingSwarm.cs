@@ -123,6 +123,7 @@ namespace Swarm
         ComputeBuffer _positionBuffer;
         ComputeBuffer _tangentBuffer;
         ComputeBuffer _normalBuffer;
+        bool _materialCloned;
         MaterialPropertyBlock _props;
         int _frameCount;
 
@@ -141,17 +142,20 @@ namespace Swarm
 
         public void ResetPositions()
         {
-            // Invoke the initialization kernel.
-            var kernel = _compute.FindKernel("CrawlingInit");
-            _compute.SetInt("InstanceCount", InstanceCount);
-            _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.SetFloat("RandomSeed", _randomSeed);
-            _compute.SetFloat("InitialSpread", _initialSpread);
-            _compute.SetTexture(kernel, "DFVolume", _volume.texture);
-            _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
-            _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
-            _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
-            _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
+            if (_positionBuffer != null)
+            {
+                // Invoke the initialization kernel.
+                var kernel = _compute.FindKernel("CrawlingInit");
+                _compute.SetInt("InstanceCount", InstanceCount);
+                _compute.SetInt("HistoryLength", HistoryLength);
+                _compute.SetFloat("RandomSeed", _randomSeed);
+                _compute.SetFloat("InitialSpread", _initialSpread);
+                _compute.SetTexture(kernel, "DFVolume", _volume.texture);
+                _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
+                _compute.SetBuffer(kernel, "TangentBuffer", _tangentBuffer);
+                _compute.SetBuffer(kernel, "NormalBuffer", _normalBuffer);
+                _compute.Dispatch(kernel, ThreadGroupCount, 1, 1);
+            }
         }
 
         #endregion
@@ -192,15 +196,16 @@ namespace Swarm
             // Clone the given material before using.
             _material = new Material(_material);
             _material.name += " (cloned)";
+            _materialCloned = true;
         }
 
         void OnDestroy()
         {
-            _drawArgsBuffer.Release();
-            _positionBuffer.Release();
-            _tangentBuffer.Release();
-            _normalBuffer.Release();
-            Destroy(_material);
+            if (_drawArgsBuffer != null) _drawArgsBuffer.Release();
+            if (_positionBuffer != null) _positionBuffer.Release();
+            if (_tangentBuffer != null) _tangentBuffer.Release();
+            if (_normalBuffer != null) _normalBuffer.Release();
+            if (_materialCloned) Destroy(_material);
         }
 
         void Update()

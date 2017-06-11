@@ -102,6 +102,7 @@ namespace Swarm
         ComputeBuffer _positionBuffer;
         ComputeBuffer _tangentBuffer;
         ComputeBuffer _normalBuffer;
+        bool _materialCloned;
         MaterialPropertyBlock _props;
         Vector3 _noiseOffset;
 
@@ -150,17 +151,18 @@ namespace Swarm
             // Clone the given material before using.
             _material = new Material(_material);
             _material.name += " (cloned)";
+            _materialCloned = true;
 
             _noiseOffset = Vector3.one * _randomSeed;
         }
 
         void OnDestroy()
         {
-            _drawArgsBuffer.Release();
-            _positionBuffer.Release();
-            _tangentBuffer.Release();
-            _normalBuffer.Release();
-            Destroy(_material);
+            if (_drawArgsBuffer != null) _drawArgsBuffer.Release();
+            if (_positionBuffer != null) _positionBuffer.Release();
+            if (_tangentBuffer != null) _tangentBuffer.Release();
+            if (_normalBuffer != null) _normalBuffer.Release();
+            if (_materialCloned) Destroy(_material);
         }
 
         void Update()
