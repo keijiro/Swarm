@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using Klak.Chromatics;
+using DFVolume;
 
 namespace Swarm
 {
@@ -59,6 +60,19 @@ namespace Swarm
         public Vector3 noiseMotion {
             get { return _noiseMotion; }
             set { _noiseMotion = value; }
+        }
+
+        [SerializeField] VolumeData _volume;
+
+        public VolumeData volume {
+            get { return _volume; }
+        }
+
+        [SerializeField, Range(0, 1)] float _constraint;
+
+        public float constraint {
+            get { return _constraint; }
+            set { _constraint = value; }
         }
 
         #endregion
@@ -172,11 +186,13 @@ namespace Swarm
 
             _compute.SetInt("InstanceCount", InstanceCount);
             _compute.SetInt("HistoryLength", HistoryLength);
-            _compute.SetFloat("RandomSeed", _randomSeed);
+            _compute.SetInt("RandomSeed", _randomSeed);
             _compute.SetFloat("Spread", _spread);
             _compute.SetFloat("StepWidth", _length / _template.segments);
             _compute.SetFloat("NoiseFrequency", _noiseFrequency);
             _compute.SetVector("NoiseOffset", _noiseOffset);
+            if (_volume != null) _compute.SetTexture(kernel, "DFVolume", _volume.texture);
+            _compute.SetFloat("Constraint", _constraint);
 
             _compute.SetBuffer(kernel, "PositionBuffer", _positionBuffer);
 

@@ -13,36 +13,87 @@ RWStructuredBuffer<float4> NormalBuffer;
 
 StructuredBuffer<float4> PositionBufferRO;
 
+// Distance field volume (gradient.xyz, distance)
+Texture3D<float4> DFVolume;
+SamplerState samplerDFVolume;
+
 CBUFFER_START(Params)
     uint InstanceCount;
     uint HistoryLength;
-    float RandomSeed;
+    uint RandomSeed;
     float Spread;
     float StepWidth;
     float NoiseFrequency;
     float3 NoiseOffset;
+    float Constraint;
 CBUFFER_END
 
-float Random(float u, float v)
+// Hash function from H. Schechter & R. Bridson, goo.gl/RXiKaH
+uint Hash(uint s)
 {
-    float f = dot(float2(12.9898, 78.233), float2(u, v)) + RandomSeed;
-    return frac(43758.5453 * sin(f));
+    s ^= 2747636419u;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    return s;
+}
+
+float Random(uint seed)
+{
+    return float(Hash(seed ^ RandomSeed)) / 4294967295.0; // 2^32-1
 }
 
 // Nearly uniformly distributed random vector in the unit sphere.
-float3 RandomPoint(float id)
+float3 RandomPoint(uint id)
 {
-    float u = Random(id * 0.01334, 0.3728) * UNITY_PI * 2;
-    float z = Random(0.8372, id * 0.01197) * 2 - 1;
-    float l = Random(4.438, id * 0.01938 - 4.378);
+    id *= 64;
+    float u = Random(id + 0) * UNITY_PI * 2;
+    float z = Random(id + 1) * 2 - 1;
+    float l = Random(id + 2);
     return float3(float2(cos(u), sin(u)) * sqrt(1 - z * z), z) * sqrt(l);
+}
+
+float4 SampleVolume(float3 p)
+{
+    return DFVolume.SampleLevel(samplerDFVolume, p + 0.5, 0);
+}
+
+// Search the distance field randomly and get the minimum distance point.
+float3 RandomSpawnPoint(uint id)
+{
+    const uint kSearchIteration = 24;
+
+    id *= 64;
+
+    // The original spawn point. Use this when Constraint == 0.
+    float3 p0 = RandomPoint(id) * Spread;
+
+    // Search the distance field randomly.
+    float3 p_min = p0;
+    float d_min = SampleVolume(p0).w;
+
+    for (uint i = 1; i < kSearchIteration; i++)
+    {
+        float3 p = RandomPoint(id + i) * Spread;
+        float d = SampleVolume(p).w;
+
+        if (d < d_min)
+        {
+            p_min = p;
+            d_min = d;
+        }
+    }
+
+    return lerp(p0, p_min, Constraint);
 }
 
 [numthreads(64, 1, 1)]
 void SwirlingUpdate(uint id : SV_DispatchThreadID)
 {
     // Determine the first point.
-    float3 p = RandomPoint(id) * Spread;
+    float3 p = RandomSpawnPoint(id);
     PositionBuffer[id] = float4(p, 0);
 
     for (uint i = 1; i < HistoryLength; i++)
@@ -50,6 +101,10 @@ void SwirlingUpdate(uint id : SV_DispatchThreadID)
         // Divergence-free noise field.
         float4 sn1 = snoise(98.4898 + p * NoiseFrequency + NoiseOffset);
         float4 sn2 = snoise( 1.2278 - p * NoiseFrequency + NoiseOffset);
+
+        // Apply the boundary condition (distance field) to the first noise field.
+        float4 df = SampleVolume(p);
+        sn1.xyz = lerp(sn1.xyz, sn1.xyz * saturate(df.w) + df.xyz, Constraint);
 
         // Move and store the point.
         p += cross(sn1.xyz, sn2.xyz) * StepWidth;
