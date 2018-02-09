@@ -206,7 +206,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4a5fda7d0d9e92468f32bd6dbbf718f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _instanceCount: 5000
+  _instanceCount: 3000
   _template: {fileID: 11400000, guid: a73837610b9d85f4b839c915c22acdc2, type: 2}
   _radius: 0.002
   _length: 1
@@ -216,7 +216,7 @@ MonoBehaviour:
   _volume: {fileID: 11400000, guid: 071eade225ea3a24d8f0bbd8ef93de83, type: 2}
   _constraint: 0
   _material: {fileID: 2100000, guid: b3e3f432bd29ac1499686dbad7ae39ef, type: 2}
-  _gradient: {fileID: 11400000, guid: 202a0875a5bc2554a932e60d8ed7e7ec, type: 2}
+  _gradient: {fileID: 11400000, guid: 73b165f4d718c0b41be2b2685960f8eb, type: 2}
   _randomSeed: 0
   _compute: {fileID: 7200000, guid: 70e8fc98ef3d1974485d153a4e66dbcc, type: 3}
 --- !u!4 &335380753
@@ -226,7 +226,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 335380751}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.3}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -316,8 +316,8 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 362080367}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.17, z: 0.3}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalPosition: {x: 0, y: -0.107, z: 0}
+  m_LocalScale: {x: 0.08, y: 0.08, z: 0.08}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
@@ -330,6 +330,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 1024039485}
+  - component: {fileID: 1024039486}
   m_Layer: 0
   m_Name: Camera Pivot
   m_TagString: Untagged
@@ -351,6 +352,27 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 20, y: 60, z: 0}
+--- !u!114 &1024039486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1024039484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 543ddbe12367a4899b011d43ef41f357, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enablePositionNoise: 1
+  _enableRotationNoise: 1
+  _positionFrequency: 0.1
+  _rotationFrequency: 0.05
+  _positionAmplitude: 0.1
+  _rotationAmplitude: 1
+  _positionScale: {x: 1, y: 1, z: 1}
+  _rotationScale: {x: 30, y: 180, z: 30}
+  _positionFractalLevel: 2
+  _rotationFractalLevel: 2
 --- !u!1 &1185791891
 GameObject:
   m_ObjectHideFlags: 0
