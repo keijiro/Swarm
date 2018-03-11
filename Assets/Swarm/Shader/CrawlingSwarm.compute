@@ -81,16 +81,9 @@ void CrawlingUpdate(uint id : SV_DispatchThreadID)
     // Retrieve a sample from the distance field.
     float4 df = SampleVolume(p);
 
-    // Two independent noise fields.
     float3 offs = float3(0, NoiseOffset, id * NoiseSpread);
-    float4 sn1 = snoise(98.4898 + p * NoiseFrequency + offs);
-    float4 sn2 = snoise( 1.2278 - p * NoiseFrequency + offs);
-
-    // Apply the boundary condition (distance field) to the first noise field.
-    sn1.xyz = -sn1.xyz * df.w + df.xyz * sn1.w;
-
-    // Construct the divergence-free noise field and apply it to the point.
-    p += cross(sn1.xyz, sn2.xyz) * Speed;
+    float4 sn = snoise(98.4898 + p * NoiseFrequency + offs);
+    p += lerp(cross(sn.xyz, df.xyz), -df.xyz, saturate(df.w)) * Speed;
 
     // Update the buffer.
     PositionBuffer[IndexOffset2 + id].xyz = p;
